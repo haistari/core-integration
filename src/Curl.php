@@ -19,7 +19,7 @@ class Curl
 	private $ssl_verifyhost;
 	private $login;
 	
-	public function __construct($url)
+	public function __construct(String $url)
 	{
 		$this->curl           = curl_init();
 		$this->returntransfer = true;
