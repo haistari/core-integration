@@ -1,0 +1,23 @@
+{
+    "name": "haistari/core-integration",
+    "description": "Library for core transaction or core validation at HAISTAR ecosystem",
+    "type": "library",
+    "require": {
+        "php": ">= 7.3",
+        "predis/predis": "^1.1"
+    },
+    "require-dev": {
+        "phpunit/phpunit": ">= 9"
+    },
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Nanda Firmansyah",
+            "email": "nafima21@gmail.com"
+        }
+    ],
+    "minimum-stability": "stable",
+    "autoload": {
+        "psr-4": {"Haistar\\": "src/"}
+    }
+}
