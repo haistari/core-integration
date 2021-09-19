@@ -37,18 +37,18 @@ class Stock
             $error   = "";
             $success = array();
 
-            $stmt_client = $this->db_helios_master->prepare("SELECT program_id as client_id, name as client_name, code as client_code FROM program WHERE api_key = :apikey");
+            $stmt_client = $this->db_helios->prepare("SELECT program_id as client_id, name as client_name, code as client_code FROM program WHERE api_key = :apikey");
             $stmt_client->execute([":apikey" => $apikey]);
             $client = $stmt_client->fetch();
             if($stmt_client->rowCount() > 0)
             {
-                $stmt_location = $this->db_helios_master->prepare("SELECT location_id, name, code as location_code FROM location WHERE code = :location_code");
+                $stmt_location = $this->db_helios->prepare("SELECT location_id, name, code as location_code FROM location WHERE code = :location_code");
                 $stmt_location->execute([":location_code" => $location_code]);
                 $location = $stmt_location->fetch();
                 if($stmt_location->rowCount() > 0)
                 {
                     $stock_type = ($allocation == "MULTI CHANNEL") ? "NONE MARKET PLACE" : $allocation;
-                    $stmt_stock_type = $this->db_helios_master->prepare("SELECT market_place_id FROM marketplace WHERE name = :stock_type");
+                    $stmt_stock_type = $this->db_helios->prepare("SELECT market_place_id FROM marketplace WHERE name = :stock_type");
                     $stmt_stock_type->execute([":stock_type" => $stock_type]);
                     $stock_allocation = $stmt_stock_type->fetch();
                     if($stmt_stock_type->rowCount() > 0)
@@ -78,7 +78,7 @@ class Stock
                                             $selection_damage = array();
                                             foreach($bundling as $bd)
                                             {
-                                                $stmt_item = $this->db_helios_master->prepare("SELECT a.program_item_id, a.name as item_name, a.code as item_code, upper(b.name) as item_managed, a.additional_expired FROM programitem a LEFT JOIN itemmanaged b ON a.item_managed_id = b.item_managed_id WHERE a.code = :item_code AND a.program_id = :client_id");
+                                                $stmt_item = $this->db_helios->prepare("SELECT a.program_item_id, a.name as item_name, a.code as item_code, upper(b.name) as item_managed, a.additional_expired FROM programitem a LEFT JOIN itemmanaged b ON a.item_managed_id = b.item_managed_id WHERE a.code = :item_code AND a.program_id = :client_id");
                                                 $stmt_item->execute([":item_code" => $bd['item_code'], ":client_id" => $client['client_id']]);
                                                 $item = $stmt_item->fetch();
                                                 if($stmt_item->rowCount() > 0)
@@ -133,7 +133,7 @@ class Stock
                                                         FROM inventory a 
                                                         WHERE a.location_id = ? AND a.market_place_id = ? AND a.program_item_id = ?";
                                                     }
-                                                    $stmt_inventory = $this->db_helios_master->prepare($sql_inventory);
+                                                    $stmt_inventory = $this->db_helios->prepare($sql_inventory);
                                                     $stmt_inventory->execute([$location['location_id'], $stock_allocation['market_place_id'], $item['program_item_id']]);
                                                     $inventory = $stmt_inventory->fetch();
                                                     if($stmt_inventory->rowCount() > 0)
@@ -180,7 +180,7 @@ class Stock
                                     }
                                     else
                                     {
-                                        $stmt_item = $this->db_helios_master->prepare("SELECT a.program_item_id, a.name as item_name, a.code as item_code, upper(b.name) as item_managed, a.additional_expired FROM programitem a LEFT JOIN itemmanaged b ON a.item_managed_id = b.item_managed_id WHERE a.code = :item_code AND a.program_id = :client_id");
+                                        $stmt_item = $this->db_helios->prepare("SELECT a.program_item_id, a.name as item_name, a.code as item_code, upper(b.name) as item_managed, a.additional_expired FROM programitem a LEFT JOIN itemmanaged b ON a.item_managed_id = b.item_managed_id WHERE a.code = :item_code AND a.program_id = :client_id");
                                         $stmt_item->execute([":item_code" => $item_code, ":client_id" => $client['client_id']]);
                                         $item = $stmt_item->fetch();
                                         if($stmt_item->rowCount() > 0)
@@ -202,7 +202,7 @@ class Stock
                                                 FROM inventory a 
                                                 WHERE a.location_id = ? AND a.market_place_id = ? AND a.program_item_id = ?";
                                             }
-                                            $stmt_inventory = $this->db_helios_master->prepare($sql_inventory);
+                                            $stmt_inventory = $this->db_helios->prepare($sql_inventory);
                                             $stmt_inventory->execute([$location['location_id'], $stock_allocation['market_place_id'], $item['program_item_id']]);
                                             $inventory = mb_convert_encoding($stmt_inventory->fetch(), "UTF-8", "HTML-ENTITIES");
                                             if($stmt_inventory->rowCount() > 0)
