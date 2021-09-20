@@ -180,7 +180,7 @@ class Stock
                                     }
                                     else
                                     {
-                                        $stmt_item = $this->db_helios->prepare("SELECT a.program_item_id, a.name as item_name, a.code as item_code, upper(b.name) as item_managed, a.additional_expired FROM programitem a LEFT JOIN itemmanaged b ON a.item_managed_id = b.item_managed_id WHERE a.code = :item_code AND a.program_id = :client_id");
+                                        $stmt_item = $this->db_helios->prepare("SELECT a.program_item_id, a.name as item_name, a.barcode as item_barcode, a.code as item_code, upper(b.name) as item_managed, a.additional_expired, a.publish_price FROM programitem a LEFT JOIN itemmanaged b ON a.item_managed_id = b.item_managed_id WHERE a.code = :item_code AND a.program_id = :client_id");
                                         $stmt_item->execute([":item_code" => $item_code, ":client_id" => $client['client_id']]);
                                         $item = $stmt_item->fetch();
                                         if($stmt_item->rowCount() > 0)
@@ -208,13 +208,13 @@ class Stock
                                             if($stmt_inventory->rowCount() > 0)
                                             {
                                                 $success = array(
-                                                    "client_code"      => $inventory['client_code'],
-                                                    "location_code"    => $inventory['location_code'],
-                                                    "stock_allocation" => $inventory['stock_allocation'],
-                                                    "item_code"        => $inventory['item_code'],
-                                                    "item_name"        => mb_convert_encoding($inventory['item_name'], "UTF-8", "HTML-ENTITIES"),
-                                                    "item_barcode"     => $inventory['item_barcode'],
-                                                    "item_price"       => floatval($inventory['publish_price']),
+                                                    "client_code"      => $client['client_code'],
+                                                    "location_code"    => $location_code,
+                                                    "stock_allocation" => $allocation,
+                                                    "item_code"        => $item['item_code'],
+                                                    "item_name"        => mb_convert_encoding($item['item_name'], "UTF-8", "HTML-ENTITIES"),
+                                                    "item_barcode"     => $item['item_barcode'],
+                                                    "item_price"       => floatval($item['publish_price']),
                                                     "exist_quantity"   => intval($inventory['exist_quantity']),
                                                     "damaged_quantity" => intval($inventory['damaged_quantity'])
                                                 );
