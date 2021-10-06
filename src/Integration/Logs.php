@@ -13,6 +13,8 @@ namespace Haistar\Integration;
 
 use Haistar\Curl;
 
+date_default_timezone_set("Asia/Bangkok");
+
 class Logs
 {    
     private $url;
@@ -23,7 +25,7 @@ class Logs
     {
         $this->url = "54.169.64.89:3000/logger";
         $this->body = array(
-            "path"         => $path,
+            "path"         => trim($path, "/")."/".$func."/".date('Y-m')."/".date('d')."/",
             "keyGenSecret" => base64_encode(explode("/", $path)[0].",Haistari,".date('yyyy-mm-dd', time()).",HAISTAR"),
             "function"     => $func,
             "fileName"     => $filename,
