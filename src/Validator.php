@@ -66,6 +66,6 @@ class Validator
             }
         }
         
-        return $error_message;
+        return trim($error_message, ", ");
     }
 }
