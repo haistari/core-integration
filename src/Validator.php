@@ -13,7 +13,7 @@ namespace Haistar;
 
 class Validator
 {
-    static public function make(Array $params, Array $rules, Array $custom_message)
+    static public function make(Array $params, Array $rules, Array $custom_message = null)
     {  
         $error_message = "";
 
