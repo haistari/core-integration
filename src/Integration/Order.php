@@ -208,7 +208,7 @@ class Order
 																":discount_seller"       => (isset($order['discount']['seller'])) ? intval($order['discount']['seller']) : 0,
 																":discount_platform"     => (isset($order['discount']['platform'])) ? intval($order['discount']['platform']) : 0,
 																":payment_date"          => $order['payment_date'],
-																":total_product_price"	 => (isset($order['price']['product'])) ? intval($order['price']['total_price']) : 0,
+																":total_product_price"	 => (isset($order['price']['product'])) ? intval($order['price']['product']) : 0,
 																":fulfillment"			 => (isset($order['fulfillment'])) ? $order['fulfillment'] : null
 															);
 										
