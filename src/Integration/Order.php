@@ -70,10 +70,12 @@ class Order
 				
 				$error = "";
 				$total_weight = 0;
-
+				$itemList = array();
+				
 				foreach ($order['items'] as $value) 
 				{
 					$total_weight += $total_weight + $value['item_weight'];
+					$itemList[] = $value['sku'];
 				}
 
 				$redis = $this->redis;
@@ -245,13 +247,9 @@ class Order
 																		$error .= "CANNOT CREATE HISTORY WITH TEMP ORDER HEADER ID ".$orderheader['order_header_id'].", ";	
 																	}
 																}
-
-																$itemList = array();
 										
 																foreach ($order['items'] as $value) 
 																{
-																	$itemList[] = $value['sku'];
-
                                                                     $stmt_checkItem = $this->db_master->prepare("SELECT a.item_id FROM item a LEFT JOIN itemmanaged b ON a.item_managed_id = b.item_managed_id WHERE a.item_id = :item_id AND a.client_id = :client_id");
                                                                     $stmt_checkItem->execute([
 																		":item_id"   => $value['item_id'],
