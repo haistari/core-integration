@@ -442,7 +442,7 @@ class Order
 
 				if($error == "")
 				{
-					$this->db_master->rollBack();
+					$this->db_master->commit();
 
 					$redis->set("orderheader:".$order['order_code'].":".$client['client_id'], date('Y-m-d H:i:s', strtotime($orderheader['created_date'])), 'EX', 259200);
 
@@ -459,6 +459,12 @@ class Order
 				else
 				{
 					$this->db_master->rollBack();
+
+					$itemList = json_encode($itemList);
+					$itemList = trim($itemList, "[");
+					$itemList = trim($itemList, "]");
+					$itemList = str_replace('"', "", $itemList);
+
 					$stmt3 = $this->db_master->prepare("INSERT INTO logapi(client_id, shop_configuration_id, order_code, item_code, result, created_date) VALUES (:client_id, :shop_configuration_id, :order_code, :item_code, :result, NOW())");
 					$stmt3->execute([
 						":client_id"             => $client['client_id'],
