@@ -252,7 +252,7 @@ class Order
 																{
 																	$itemList[] = $value['sku'];
 
-                                                                    $stmt_checkItem = $this->db_master->prepare("SELECT a.item_id as item_managed FROM item a LEFT JOIN itemmanaged b ON a.item_managed_id = b.item_managed_id WHERE a.item_id = :item_id AND a.client_id = :client_id");
+                                                                    $stmt_checkItem = $this->db_master->prepare("SELECT a.item_id FROM item a LEFT JOIN itemmanaged b ON a.item_managed_id = b.item_managed_id WHERE a.item_id = :item_id AND a.client_id = :client_id");
                                                                     $stmt_checkItem->execute([
 																		":item_id"   => $value['item_id'],
 																		":client_id" => $client['client_id']
