@@ -139,7 +139,7 @@ class Order
                                                                     $drp              = $order['dropshipper']['name'].' ('.$order['dropshipper']['phone'].')';
                                                                     $drp_code         = 'DRP'.date('Ymd').rand(1000, 9999);
                                                                     $sql_dropshipper  = "INSERT INTO dropshipper(client_id, code, name, owner_name, phone, email, address, district, city, province, country, created_date, modified_date, created_by, modified_by) VALUES (?, ?, ?, ?, ?, NULL, '', '', '', '', '', NOW(), NOW(), 0, 0) RETURNING dropshipper_id";
-                                                                    $stmt_dropshipper = $this->db->prepare($sql_dropshipper);
+                                                                    $stmt_dropshipper = $this->db_master->prepare($sql_dropshipper);
                                                                     $stmt_dropshipper->execute([$client['client_id'], $drp_code, $drp, $drp, $order['dropshipper']['phone']]);
                                                                     $drop           = $stmt_dropshipper->fetch();
                                                                     $dropshipper_id = $drop['dropshipper_id'];
@@ -210,13 +210,13 @@ class Order
 																":fulfillment"			 => $order['fulfillment']
 															);
 										
-                                                            $stmt_orderheader = $this->db->prepare("INSERT INTO orderheader(order_code, location_id, location_to, client_id, shop_configuration_id, status_id, delivery_type_id, payment_type_id, distributor_id, dropshipper_id, channel_id, stock_type_id, order_type_id, ref_order_id, code, order_date, booking_number, waybill_number, recipient_name, recipient_phone, recipient_email, recipient_address, recipient_district, recipient_city, recipient_province, recipient_country, recipient_postal_code, latitude, longitude, buyer_name, buyer_phone, buyer_email, buyer_address, buyer_district, buyer_city, buyer_province, buyer_country, buyer_postal_code, total_koli, total_weight, shipping_price, total_price, cod_price, dfod_price, stock_source, notes, remark, created_date, modified_date, created_by, modified_by, created_name, store_name, discount, discount_shipping, discount_point, discount_seller, discount_platform, payment_date, total_product_price, fullfilmenttype_configuration_id) VALUES (:order_code, :location_id, :location_to, :client_id, :shop_configuration_id, :status_id, :delivery_type_id, :payment_type_id, :distributor_id, :dropshipper_id, :channel_id, :stock_type_id, :order_type_id, :ref_order_id, :code, :order_date, :booking_number, :waybill_number, :recipient_name, :recipient_phone, :recipient_email, :recipient_address, :recipient_district, :recipient_city, :recipient_province, :recipient_country, :recipient_postal_code, :latitude, :longitude, :buyer_name, :buyer_phone, :buyer_email, :buyer_address, :buyer_district, :buyer_city, :buyer_province, :buyer_country, :buyer_postal_code, :total_koli, :total_weight, :shipping_price, :total_price, :cod_price, :dfod_price, :stock_source, :notes, :remark, :created_date, :modified_date, :created_by, :modified_by, :created_name, :shop_name, :discount, :discount_shipping, :discount_point, :discount_seller, :discount_platform, :payment_date, :total_product_price, :fulfillment) RETURNING shop_configuration_id, client_id, ref_order_id, order_header_id, status_id, created_date, modified_date, created_by, modified_by");
+                                                            $stmt_orderheader = $this->db_master->prepare("INSERT INTO orderheader(order_code, location_id, location_to, client_id, shop_configuration_id, status_id, delivery_type_id, payment_type_id, distributor_id, dropshipper_id, channel_id, stock_type_id, order_type_id, ref_order_id, code, order_date, booking_number, waybill_number, recipient_name, recipient_phone, recipient_email, recipient_address, recipient_district, recipient_city, recipient_province, recipient_country, recipient_postal_code, latitude, longitude, buyer_name, buyer_phone, buyer_email, buyer_address, buyer_district, buyer_city, buyer_province, buyer_country, buyer_postal_code, total_koli, total_weight, shipping_price, total_price, cod_price, dfod_price, stock_source, notes, remark, created_date, modified_date, created_by, modified_by, created_name, store_name, discount, discount_shipping, discount_point, discount_seller, discount_platform, payment_date, total_product_price, fullfilmenttype_configuration_id) VALUES (:order_code, :location_id, :location_to, :client_id, :shop_configuration_id, :status_id, :delivery_type_id, :payment_type_id, :distributor_id, :dropshipper_id, :channel_id, :stock_type_id, :order_type_id, :ref_order_id, :code, :order_date, :booking_number, :waybill_number, :recipient_name, :recipient_phone, :recipient_email, :recipient_address, :recipient_district, :recipient_city, :recipient_province, :recipient_country, :recipient_postal_code, :latitude, :longitude, :buyer_name, :buyer_phone, :buyer_email, :buyer_address, :buyer_district, :buyer_city, :buyer_province, :buyer_country, :buyer_postal_code, :total_koli, :total_weight, :shipping_price, :total_price, :cod_price, :dfod_price, :stock_source, :notes, :remark, :created_date, :modified_date, :created_by, :modified_by, :created_name, :shop_name, :discount, :discount_shipping, :discount_point, :discount_seller, :discount_platform, :payment_date, :total_product_price, :fulfillment) RETURNING shop_configuration_id, client_id, ref_order_id, order_header_id, status_id, created_date, modified_date, created_by, modified_by");
                                                             $stmt_orderheader->execute($data_order);
                                                             $orderheader = $stmt_orderheader->fetch();
 															
 															if($stmt_orderheader->rowCount() > 0)
 															{
-                                                                $stmt_jobpushorder = $this->db->prepare("INSERT INTO jobpushorder(order_header_id, created_date) VALUES(:order_header_id, NOW())");
+                                                                $stmt_jobpushorder = $this->db_master->prepare("INSERT INTO jobpushorder(order_header_id, created_date) VALUES(:order_header_id, NOW())");
 																$stmt_jobpushorder->execute([
                                                                     ":order_header_id" => $orderheader['order_header_id']
                                                                 ]);
@@ -226,7 +226,7 @@ class Order
 																}
 																else
 																{                                                                    
-                                                                    $stmt_createretry = $this->db->prepare("INSERT INTO tmpretry(channel_id, shop_configuration_id, order_header_id, order_code, acked, counter_ack, created_date, modified_date, created_by, modified_by) VALUES(:channel_id, :shop_configuration_id, :order_header_id, :ref_order_id, 0, 0, NOW(), NOW(), 0, 0)");
+                                                                    $stmt_createretry = $this->db_master->prepare("INSERT INTO tmpretry(channel_id, shop_configuration_id, order_header_id, order_code, acked, counter_ack, created_date, modified_date, created_by, modified_by) VALUES(:channel_id, :shop_configuration_id, :order_header_id, :ref_order_id, 0, 0, NOW(), NOW(), 0, 0)");
 																	$stmt_createretry->execute([
                                                                         ":channel_id"            => $channel_id,
                                                                         ":shop_configuration_id" => $orderheader['shop_configuration_id'],
@@ -238,7 +238,7 @@ class Order
 																	}
 										
 																	$history = "INSERT INTO orderhistory(order_header_id, status_id, updated_by, update_date, created_date, created_by, modified_by) VALUES(?, ?, 'SYSTEM API', ?, ?, ".$orderheader['created_by'].", ".$orderheader['modified_by'].")";
-																	$stmt7   = $this->db->prepare($history);
+																	$stmt7   = $this->db_master->prepare($history);
 																	$stmt7->execute([$orderheader['order_header_id'], $orderheader['status_id'], date('Y-m-d H:i:s', strtotime($orderheader['created_date'])), date('Y-m-d H:i:s', strtotime($orderheader['created_date']))]);
 																	if($stmt7->rowCount() == 0)
 																	{
@@ -252,7 +252,7 @@ class Order
 																{
 																	$itemList[] = $value['sku'];
 
-                                                                    $stmt_checkItem = $this->db->prepare("SELECT a.item_id as item_managed FROM item a LEFT JOIN itemmanaged b ON a.item_managed_id = b.item_managed_id WHERE a.item_id = :item_id AND a.client_id = :client_id");
+                                                                    $stmt_checkItem = $this->db_master->prepare("SELECT a.item_id as item_managed FROM item a LEFT JOIN itemmanaged b ON a.item_managed_id = b.item_managed_id WHERE a.item_id = :item_id AND a.client_id = :client_id");
                                                                     $stmt_checkItem->execute([
 																		":item_id"   => $value['item_id'],
 																		":client_id" => $client['client_id']
@@ -260,7 +260,7 @@ class Order
                                                                     $checkItem = $stmt_checkItem->fetch();
 																	if($stmt_checkItem->rowCount() > 0)
 																	{
-																		$stmt_createDetail = $this->db->prepare("INSERT INTO orderdetail(order_code, inventory_id, order_header_id, item_id, order_quantity, unit_price, total_unit_price, unit_weight, status_id, created_date, modified_date, created_by, modified_by, ref_detail_id) VALUES (:order_code,  NULL, :order_header_id, :item_id, :order_quantity, :unit_price, :total_unit_price, :unit_weight, :status_id, :created_date, :modified_date, :created_by, :modified_by, :reference_id)");
+																		$stmt_createDetail = $this->db_master->prepare("INSERT INTO orderdetail(order_code, inventory_id, order_header_id, item_id, order_quantity, unit_price, total_unit_price, unit_weight, status_id, created_date, modified_date, created_by, modified_by, ref_detail_id) VALUES (:order_code,  NULL, :order_header_id, :item_id, :order_quantity, :unit_price, :total_unit_price, :unit_weight, :status_id, :created_date, :modified_date, :created_by, :modified_by, :reference_id)");
 																		$stmt_createDetail->execute([
 																			":order_code"       => strtoupper($order['order_code']),
 																			":order_header_id"  => $orderheader['order_header_id'],
@@ -444,7 +444,7 @@ class Order
 
 				if($error == "")
 				{
-					$this->db->rollBack();
+					$this->db_master->rollBack();
 
 					$redis->set("orderheader:".$order['order_code'].":".$client['client_id'], date('Y-m-d H:i:s', strtotime($orderheader['created_date'])), 'EX', 259200);
 
@@ -460,8 +460,8 @@ class Order
 				}
 				else
 				{
-					$this->db->rollBack();
-					$stmt3 = $this->db->prepare("INSERT INTO logapi(client_id, shop_configuration_id, order_code, item_code, result, created_date) VALUES (:client_id, :shop_configuration_id, :order_code, :item_code, :result, NOW())");
+					$this->db_master->rollBack();
+					$stmt3 = $this->db_master->prepare("INSERT INTO logapi(client_id, shop_configuration_id, order_code, item_code, result, created_date) VALUES (:client_id, :shop_configuration_id, :order_code, :item_code, :result, NOW())");
 					$stmt3->execute([
 						":client_id"             => $client['client_id'],
 						":shop_configuration_id" => $shopconfiguration_id,
@@ -481,7 +481,7 @@ class Order
 			}
 			catch (PDOException $e) 
 			{
-				$this->db->rollBack();
+				$this->db_master->rollBack();
 				
 				$msg = array(
 					"status"  => 500,
