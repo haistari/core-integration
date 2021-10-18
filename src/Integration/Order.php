@@ -463,7 +463,7 @@ class Order
 					$itemList = json_encode($itemList);
 					$itemList = trim($itemList, "[");
 					$itemList = trim($itemList, "]");
-					$itemList = str_replace('"', "", $itemList);
+					$itemList = trim($itemList, '"');
 
 					$stmt3 = $this->db_master->prepare("INSERT INTO logapi(client_id, shop_configuration_id, order_code, item_code, result, created_date) VALUES (:client_id, :shop_configuration_id, :order_code, :item_code, :result, NOW())");
 					$stmt3->execute([
