@@ -13,6 +13,7 @@ namespace Haistar\Integration;
 
 use PDO;
 use Predis\Client;
+use Haistar\Validator;
 
 class Order
 {
