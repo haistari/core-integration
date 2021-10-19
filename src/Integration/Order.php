@@ -124,170 +124,183 @@ class Order
 														$status_id = $redis->get("status:ORD_UNFULFILLED");
 														if(!$redis->exists("orderheader:".$order['order_code'].":".$client['client_id']))
 														{
-															$dropshipper_id = null;
-															if(!empty($order['dropshipper']) && $order['dropshipper']['name'] != "")
+															$stmt_checkOrder = $this->db_slave->prepare("SELECT order_header_id FROM orderheader WHERE code = :order_code AND client_id = :client_id");
+															$stmt_checkOrder->execute([
+																":order_code" => $order['order_code'],
+																":client_id"  => $client['client_id']
+															]);
+															if($stmt_checkOrder->rowCount() == 0)
 															{
-																$naming                 = $order['dropshipper']['name'].' ('.$order['dropshipper']['phone'].')';
-																$sql_dropshipper_check  = "SELECT dropshipper_id FROM dropshipper WHERE client_id = ? AND name = ?";
-																$stmt_dropshipper_check = $this->db_slave->prepare($sql_dropshipper_check);
-                                                                $stmt_dropshipper_check->execute([$client['client_id'], $naming]);
-                                                                $res_dropshipper_check = $stmt_dropshipper_check->fetch();
-																if($stmt_dropshipper_check->rowCount() > 0)
+																$dropshipper_id = null;
+																if(!empty($order['dropshipper']) && $order['dropshipper']['name'] != "")
 																{
-																	$dropshipper_id = $res_dropshipper_check['dropshipper_id'];
-																}
-																else
-																{
-                                                                    $drp              = $order['dropshipper']['name'].' ('.$order['dropshipper']['phone'].')';
-                                                                    $drp_code         = 'DRP'.date('Ymd').rand(1000, 9999);
-                                                                    $sql_dropshipper  = "INSERT INTO dropshipper(client_id, code, name, owner_name, phone, email, address, district, city, province, country, created_date, modified_date, created_by, modified_by) VALUES (?, ?, ?, ?, ?, NULL, '', '', '', '', '', NOW(), NOW(), 0, 0) RETURNING dropshipper_id";
-                                                                    $stmt_dropshipper = $this->db_master->prepare($sql_dropshipper);
-                                                                    $stmt_dropshipper->execute([$client['client_id'], $drp_code, $drp, $drp, $order['dropshipper']['phone']]);
-                                                                    $drop           = $stmt_dropshipper->fetch();
-                                                                    $dropshipper_id = $drop['dropshipper_id'];
-																}
-															}
-
-															$data_order = array(
-																":order_code"            => strtoupper($order['order_code']),
-																":location_id"           => $location_id,
-																":location_to"           => NULL,
-																":client_id"             => $client['client_id'],
-																":shop_configuration_id" => $shopconfiguration_id,
-																":status_id"             => $status_id,
-																":delivery_type_id"      => $deliverytype_id,
-																":payment_type_id"       => $paymenttype_id,
-																":distributor_id"        => NULL,
-																":dropshipper_id"        => $dropshipper_id,
-																":channel_id"            => $channel_id,
-																":stock_type_id"         => $stocktype_id,
-																":order_type_id"         => $ordertype_id,
-																":ref_order_id"          => $order['ref_order_id'],
-																":code"                  => strtoupper($order['order_code']),
-																":order_date"            => $order['order_date'],
-																":booking_number"        => $order['booking_number'],
-																":waybill_number"        => $order['waybill_number'],
-																":recipient_name"        => $order['recipient']['name'],
-																":recipient_phone"       => $order['recipient']['phone'],
-																":recipient_email"       => $order['recipient']['email'],
-																":recipient_address"     => $order['recipient']['address'],
-																":recipient_district"    => $order['recipient']['district'],
-																":recipient_city"        => $order['recipient']['city'],
-																":recipient_province"    => $order['recipient']['province'],
-																":recipient_country"     => $order['recipient']['country'],
-																":recipient_postal_code" => ($order['recipient']['postal_code'] == "" || $order['recipient']['postal_code'] == NULL) ? '00000' : $order['recipient']['postal_code'],
-																":latitude"              => $order['latitude'],
-																":longitude"             => $order['longitude'],
-																":buyer_name"            => (isset($order['buyer']['name'])) ? $order['buyer']['name'] : null ,
-																":buyer_phone"           => (isset($order['buyer']['phone'])) ? $order['buyer']['phone'] : null ,
-																":buyer_email"           => (isset($order['buyer']['email'])) ? $order['buyer']['email'] : null ,
-																":buyer_address"         => (isset($order['buyer']['address'])) ? $order['buyer']['address'] : null ,
-																":buyer_district"        => (isset($order['buyer']['district'])) ? $order['buyer']['district'] : null ,
-																":buyer_city"            => (isset($order['buyer']['city'])) ? $order['buyer']['city'] : null ,
-																":buyer_province"        => (isset($order['buyer']['province'])) ? $order['buyer']['province'] : null ,
-																":buyer_country"         => (isset($order['buyer']['country'])) ? $order['buyer']['country'] : null ,
-																":buyer_postal_code"     => (isset($order['buyer']['postal_code'])) ? $order['buyer']['postal_code'] : null ,
-																":total_koli"            => $order['total_koli'],
-																":total_weight"          => $total_weight,
-																":shipping_price"        => $order['price']['shipping'],
-																":total_price"           => $order['price']['total_price'],
-																":cod_price"             => $order['price']['cod'],
-																":dfod_price"            => $order['price']['dfod'],
-																":stock_source"          => $order['stock_source'],
-																":notes"                 => $order['notes'],
-																":remark"                => $order['remark'],
-																":created_date"          => date("Y-m-d H:i:s", strtotime("now")),
-																":modified_date"         => date("Y-m-d H:i:s", strtotime("now")),
-																":created_by"            => 0,
-																":modified_by"           => 0,
-																":created_name"          => $order['created_name'],
-																":shop_name"             => $order['shop_name'],
-																":discount"              => (isset($order['discount']['product'])) ? intval($order['discount']['product']) : 0,
-																":discount_shipping"     => (isset($order['discount']['shipping'])) ? intval($order['discount']['shipping']) : 0,
-																":discount_point"        => (isset($order['discount']['point'])) ? intval($order['discount']['point']) : 0,
-																":discount_seller"       => (isset($order['discount']['seller'])) ? intval($order['discount']['seller']) : 0,
-																":discount_platform"     => (isset($order['discount']['platform'])) ? intval($order['discount']['platform']) : 0,
-																":payment_date"          => $order['payment_date'],
-																":total_product_price"	 => (isset($order['price']['product'])) ? intval($order['price']['product']) : 0,
-																":fulfillment"			 => (isset($order['fulfillment'])) ? $order['fulfillment'] : null
-															);
-										
-                                                            $stmt_orderheader = $this->db_master->prepare("INSERT INTO orderheader(order_code, location_id, location_to, client_id, shop_configuration_id, status_id, delivery_type_id, payment_type_id, distributor_id, dropshipper_id, channel_id, stock_type_id, order_type_id, ref_order_id, code, order_date, booking_number, waybill_number, recipient_name, recipient_phone, recipient_email, recipient_address, recipient_district, recipient_city, recipient_province, recipient_country, recipient_postal_code, latitude, longitude, buyer_name, buyer_phone, buyer_email, buyer_address, buyer_district, buyer_city, buyer_province, buyer_country, buyer_postal_code, total_koli, total_weight, shipping_price, total_price, cod_price, dfod_price, stock_source, notes, remark, created_date, modified_date, created_by, modified_by, created_name, store_name, discount, discount_shipping, discount_point, discount_seller, discount_platform, payment_date, total_product_price, fullfilmenttype_configuration_id) VALUES (:order_code, :location_id, :location_to, :client_id, :shop_configuration_id, :status_id, :delivery_type_id, :payment_type_id, :distributor_id, :dropshipper_id, :channel_id, :stock_type_id, :order_type_id, :ref_order_id, :code, :order_date, :booking_number, :waybill_number, :recipient_name, :recipient_phone, :recipient_email, :recipient_address, :recipient_district, :recipient_city, :recipient_province, :recipient_country, :recipient_postal_code, :latitude, :longitude, :buyer_name, :buyer_phone, :buyer_email, :buyer_address, :buyer_district, :buyer_city, :buyer_province, :buyer_country, :buyer_postal_code, :total_koli, :total_weight, :shipping_price, :total_price, :cod_price, :dfod_price, :stock_source, :notes, :remark, :created_date, :modified_date, :created_by, :modified_by, :created_name, :shop_name, :discount, :discount_shipping, :discount_point, :discount_seller, :discount_platform, :payment_date, :total_product_price, :fulfillment) RETURNING shop_configuration_id, client_id, ref_order_id, order_header_id, status_id, created_date, modified_date, created_by, modified_by");
-                                                            $stmt_orderheader->execute($data_order);
-                                                            $orderheader = $stmt_orderheader->fetch();
-															
-															if($stmt_orderheader->rowCount() > 0)
-															{
-                                                                $stmt_jobpushorder = $this->db_master->prepare("INSERT INTO jobpushorder(order_header_id, created_date) VALUES(:order_header_id, NOW())");
-																$stmt_jobpushorder->execute([
-                                                                    ":order_header_id" => $orderheader['order_header_id']
-                                                                ]);
-																if($stmt_jobpushorder->rowCount() == 0)
-																{
-																	$error .= "CANNOT CREATE JOBPUSHORDER WITH ORDER HEADER ID ".$orderheader['order_header_id'].", ";
-																}
-																else
-																{                                                                    
-                                                                    $stmt_createretry = $this->db_master->prepare("INSERT INTO tmpretry(channel_id, shop_configuration_id, order_header_id, order_code, acked, counter_ack, created_date, modified_date, created_by, modified_by) VALUES(:channel_id, :shop_configuration_id, :order_header_id, :ref_order_id, 0, 0, NOW(), NOW(), 0, 0)");
-																	$stmt_createretry->execute([
-                                                                        ":channel_id"            => $channel_id,
-                                                                        ":shop_configuration_id" => $orderheader['shop_configuration_id'],
-                                                                        ":order_header_id"       => $orderheader['order_header_id'],
-                                                                        ":ref_order_id"          => $orderheader['ref_order_id']]);
-																	if($stmt_createretry->rowCount() == 0)
+																	$naming                 = $order['dropshipper']['name'].' ('.$order['dropshipper']['phone'].')';
+																	$sql_dropshipper_check  = "SELECT dropshipper_id FROM dropshipper WHERE client_id = ? AND name = ?";
+																	$stmt_dropshipper_check = $this->db_slave->prepare($sql_dropshipper_check);
+																	$stmt_dropshipper_check->execute([$client['client_id'], $naming]);
+																	$res_dropshipper_check = $stmt_dropshipper_check->fetch();
+																	if($stmt_dropshipper_check->rowCount() > 0)
 																	{
-																		$error .= "CANNOT CREATE TEMP RETRY WITH TEMP ORDER HEADER ID ".$orderheader['order_header_id'].", ";
-																	}
-										
-																	$history = "INSERT INTO orderhistory(order_header_id, status_id, updated_by, update_date, created_date, created_by, modified_by) VALUES(?, ?, 'SYSTEM API', ?, ?, ".$orderheader['created_by'].", ".$orderheader['modified_by'].")";
-																	$stmt7   = $this->db_master->prepare($history);
-																	$stmt7->execute([$orderheader['order_header_id'], $orderheader['status_id'], date('Y-m-d H:i:s', strtotime($orderheader['created_date'])), date('Y-m-d H:i:s', strtotime($orderheader['created_date']))]);
-																	if($stmt7->rowCount() == 0)
-																	{
-																		$error .= "CANNOT CREATE HISTORY WITH TEMP ORDER HEADER ID ".$orderheader['order_header_id'].", ";	
-																	}
-																}
-										
-																foreach ($order['items'] as $value) 
-																{
-                                                                    $stmt_checkItem = $this->db_master->prepare("SELECT a.item_id FROM item a LEFT JOIN itemmanaged b ON a.item_managed_id = b.item_managed_id WHERE a.item_id = :item_id AND a.client_id = :client_id");
-                                                                    $stmt_checkItem->execute([
-																		":item_id"   => $value['item_id'],
-																		":client_id" => $client['client_id']
-																	]);
-                                                                    $checkItem = $stmt_checkItem->fetch();
-																	if($stmt_checkItem->rowCount() > 0)
-																	{
-																		$stmt_createDetail = $this->db_master->prepare("INSERT INTO orderdetail(order_code, inventory_id, order_header_id, item_id, order_quantity, unit_price, total_unit_price, unit_weight, status_id, created_date, modified_date, created_by, modified_by, ref_detail_id) VALUES (:order_code,  NULL, :order_header_id, :item_id, :order_quantity, :unit_price, :total_unit_price, :unit_weight, :status_id, :created_date, :modified_date, :created_by, :modified_by, :reference_id)");
-																		$stmt_createDetail->execute([
-																			":order_code"       => strtoupper($order['order_code']),
-																			":order_header_id"  => $orderheader['order_header_id'],
-																			":item_id"          => $checkItem['item_id'],
-																			":order_quantity"   => $value['quantity'],
-																			":unit_price"       => $value['unit_price'],
-																			":total_unit_price" => intval($value['quantity']*$value['unit_price']),
-																			":unit_weight"      => $value['item_weight'],
-																			":status_id"        => $orderheader['status_id'],
-																			":created_date"     => $orderheader['created_date'],
-																			":modified_date"    => $orderheader['modified_date'],
-																			":created_by"       => $orderheader['created_by'],
-																			":modified_by"      => $orderheader['modified_by'],
-																			":reference_id"     => $value['ref_detail_id']
-																		]);
-																		if($stmt_createDetail->rowCount() == 0)
-																		{
-																			$error .= "FAILED CREATE ORDER DETAIL FOR ITEM ID ".$value['item_id'].", ";
-																		}
+																		$dropshipper_id = $res_dropshipper_check['dropshipper_id'];
 																	}
 																	else
 																	{
-																		$error .= "ITEM ".$value['item_id']." NOT FOUND IN ITEM MASTER, ";
+																		$drp              = $order['dropshipper']['name'].' ('.$order['dropshipper']['phone'].')';
+																		$drp_code         = 'DRP'.date('Ymd').rand(1000, 9999);
+																		$sql_dropshipper  = "INSERT INTO dropshipper(client_id, code, name, owner_name, phone, email, address, district, city, province, country, created_date, modified_date, created_by, modified_by) VALUES (?, ?, ?, ?, ?, NULL, '', '', '', '', '', NOW(), NOW(), 0, 0) RETURNING dropshipper_id";
+																		$stmt_dropshipper = $this->db_master->prepare($sql_dropshipper);
+																		$stmt_dropshipper->execute([$client['client_id'], $drp_code, $drp, $drp, $order['dropshipper']['phone']]);
+																		$drop           = $stmt_dropshipper->fetch();
+																		$dropshipper_id = $drop['dropshipper_id'];
 																	}
+																}
+
+																$data_order = array(
+																	":order_code"            => strtoupper($order['order_code']),
+																	":location_id"           => $location_id,
+																	":location_to"           => NULL,
+																	":client_id"             => $client['client_id'],
+																	":shop_configuration_id" => $shopconfiguration_id,
+																	":status_id"             => $status_id,
+																	":delivery_type_id"      => $deliverytype_id,
+																	":payment_type_id"       => $paymenttype_id,
+																	":distributor_id"        => NULL,
+																	":dropshipper_id"        => $dropshipper_id,
+																	":channel_id"            => $channel_id,
+																	":stock_type_id"         => $stocktype_id,
+																	":order_type_id"         => $ordertype_id,
+																	":ref_order_id"          => $order['ref_order_id'],
+																	":code"                  => strtoupper($order['order_code']),
+																	":order_date"            => $order['order_date'],
+																	":booking_number"        => $order['booking_number'],
+																	":waybill_number"        => $order['waybill_number'],
+																	":recipient_name"        => $order['recipient']['name'],
+																	":recipient_phone"       => $order['recipient']['phone'],
+																	":recipient_email"       => $order['recipient']['email'],
+																	":recipient_address"     => $order['recipient']['address'],
+																	":recipient_district"    => $order['recipient']['district'],
+																	":recipient_city"        => $order['recipient']['city'],
+																	":recipient_province"    => $order['recipient']['province'],
+																	":recipient_country"     => $order['recipient']['country'],
+																	":recipient_postal_code" => ($order['recipient']['postal_code'] == "" || $order['recipient']['postal_code'] == NULL) ? '00000' : $order['recipient']['postal_code'],
+																	":latitude"              => $order['latitude'],
+																	":longitude"             => $order['longitude'],
+																	":buyer_name"            => (isset($order['buyer']['name'])) ? $order['buyer']['name'] : null ,
+																	":buyer_phone"           => (isset($order['buyer']['phone'])) ? $order['buyer']['phone'] : null ,
+																	":buyer_email"           => (isset($order['buyer']['email'])) ? $order['buyer']['email'] : null ,
+																	":buyer_address"         => (isset($order['buyer']['address'])) ? $order['buyer']['address'] : null ,
+																	":buyer_district"        => (isset($order['buyer']['district'])) ? $order['buyer']['district'] : null ,
+																	":buyer_city"            => (isset($order['buyer']['city'])) ? $order['buyer']['city'] : null ,
+																	":buyer_province"        => (isset($order['buyer']['province'])) ? $order['buyer']['province'] : null ,
+																	":buyer_country"         => (isset($order['buyer']['country'])) ? $order['buyer']['country'] : null ,
+																	":buyer_postal_code"     => (isset($order['buyer']['postal_code'])) ? $order['buyer']['postal_code'] : null ,
+																	":total_koli"            => $order['total_koli'],
+																	":total_weight"          => $total_weight,
+																	":shipping_price"        => $order['price']['shipping'],
+																	":total_price"           => $order['price']['total_price'],
+																	":cod_price"             => $order['price']['cod'],
+																	":dfod_price"            => $order['price']['dfod'],
+																	":stock_source"          => $order['stock_source'],
+																	":notes"                 => $order['notes'],
+																	":remark"                => $order['remark'],
+																	":created_date"          => date("Y-m-d H:i:s", strtotime("now")),
+																	":modified_date"         => date("Y-m-d H:i:s", strtotime("now")),
+																	":created_by"            => 0,
+																	":modified_by"           => 0,
+																	":created_name"          => $order['created_name'],
+																	":shop_name"             => $order['shop_name'],
+																	":discount"              => (isset($order['discount']['product'])) ? intval($order['discount']['product']) : 0,
+																	":discount_shipping"     => (isset($order['discount']['shipping'])) ? intval($order['discount']['shipping']) : 0,
+																	":discount_point"        => (isset($order['discount']['point'])) ? intval($order['discount']['point']) : 0,
+																	":discount_seller"       => (isset($order['discount']['seller'])) ? intval($order['discount']['seller']) : 0,
+																	":discount_platform"     => (isset($order['discount']['platform'])) ? intval($order['discount']['platform']) : 0,
+																	":payment_date"          => $order['payment_date'],
+																	":total_product_price"	 => (isset($order['price']['product'])) ? intval($order['price']['product']) : 0,
+																	":fulfillment"			 => (isset($order['fulfillment'])) ? $order['fulfillment'] : null
+																);
+											
+																$stmt_orderheader = $this->db_master->prepare("INSERT INTO orderheader(order_code, location_id, location_to, client_id, shop_configuration_id, status_id, delivery_type_id, payment_type_id, distributor_id, dropshipper_id, channel_id, stock_type_id, order_type_id, ref_order_id, code, order_date, booking_number, waybill_number, recipient_name, recipient_phone, recipient_email, recipient_address, recipient_district, recipient_city, recipient_province, recipient_country, recipient_postal_code, latitude, longitude, buyer_name, buyer_phone, buyer_email, buyer_address, buyer_district, buyer_city, buyer_province, buyer_country, buyer_postal_code, total_koli, total_weight, shipping_price, total_price, cod_price, dfod_price, stock_source, notes, remark, created_date, modified_date, created_by, modified_by, created_name, store_name, discount, discount_shipping, discount_point, discount_seller, discount_platform, payment_date, total_product_price, fullfilmenttype_configuration_id) VALUES (:order_code, :location_id, :location_to, :client_id, :shop_configuration_id, :status_id, :delivery_type_id, :payment_type_id, :distributor_id, :dropshipper_id, :channel_id, :stock_type_id, :order_type_id, :ref_order_id, :code, :order_date, :booking_number, :waybill_number, :recipient_name, :recipient_phone, :recipient_email, :recipient_address, :recipient_district, :recipient_city, :recipient_province, :recipient_country, :recipient_postal_code, :latitude, :longitude, :buyer_name, :buyer_phone, :buyer_email, :buyer_address, :buyer_district, :buyer_city, :buyer_province, :buyer_country, :buyer_postal_code, :total_koli, :total_weight, :shipping_price, :total_price, :cod_price, :dfod_price, :stock_source, :notes, :remark, :created_date, :modified_date, :created_by, :modified_by, :created_name, :shop_name, :discount, :discount_shipping, :discount_point, :discount_seller, :discount_platform, :payment_date, :total_product_price, :fulfillment) RETURNING shop_configuration_id, client_id, ref_order_id, order_header_id, status_id, created_date, modified_date, created_by, modified_by");
+																$stmt_orderheader->execute($data_order);
+																$orderheader = $stmt_orderheader->fetch();
+																
+																if($stmt_orderheader->rowCount() > 0)
+																{
+																	$stmt_jobpushorder = $this->db_master->prepare("INSERT INTO jobpushorder(order_header_id, created_date) VALUES(:order_header_id, NOW())");
+																	$stmt_jobpushorder->execute([
+																		":order_header_id" => $orderheader['order_header_id']
+																	]);
+																	if($stmt_jobpushorder->rowCount() == 0)
+																	{
+																		$error .= "CANNOT CREATE JOBPUSHORDER WITH ORDER HEADER ID ".$orderheader['order_header_id'].", ";
+																	}
+																	else
+																	{                                                                    
+																		$stmt_createretry = $this->db_master->prepare("INSERT INTO tmpretry(channel_id, shop_configuration_id, order_header_id, order_code, acked, counter_ack, created_date, modified_date, created_by, modified_by) VALUES(:channel_id, :shop_configuration_id, :order_header_id, :ref_order_id, 0, 0, NOW(), NOW(), 0, 0)");
+																		$stmt_createretry->execute([
+																			":channel_id"            => $channel_id,
+																			":shop_configuration_id" => $orderheader['shop_configuration_id'],
+																			":order_header_id"       => $orderheader['order_header_id'],
+																			":ref_order_id"          => $orderheader['ref_order_id']]);
+																		if($stmt_createretry->rowCount() == 0)
+																		{
+																			$error .= "CANNOT CREATE TEMP RETRY WITH TEMP ORDER HEADER ID ".$orderheader['order_header_id'].", ";
+																		}
+											
+																		$history = "INSERT INTO orderhistory(order_header_id, status_id, updated_by, update_date, created_date, created_by, modified_by) VALUES(?, ?, 'SYSTEM API', ?, ?, ".$orderheader['created_by'].", ".$orderheader['modified_by'].")";
+																		$stmt7   = $this->db_master->prepare($history);
+																		$stmt7->execute([$orderheader['order_header_id'], $orderheader['status_id'], date('Y-m-d H:i:s', strtotime($orderheader['created_date'])), date('Y-m-d H:i:s', strtotime($orderheader['created_date']))]);
+																		if($stmt7->rowCount() == 0)
+																		{
+																			$error .= "CANNOT CREATE HISTORY WITH TEMP ORDER HEADER ID ".$orderheader['order_header_id'].", ";	
+																		}
+																	}
+											
+																	foreach ($order['items'] as $value) 
+																	{
+																		$stmt_checkItem = $this->db_master->prepare("SELECT a.item_id FROM item a LEFT JOIN itemmanaged b ON a.item_managed_id = b.item_managed_id WHERE a.item_id = :item_id AND a.client_id = :client_id");
+																		$stmt_checkItem->execute([
+																			":item_id"   => $value['item_id'],
+																			":client_id" => $client['client_id']
+																		]);
+																		$checkItem = $stmt_checkItem->fetch();
+																		if($stmt_checkItem->rowCount() > 0)
+																		{
+																			$stmt_createDetail = $this->db_master->prepare("INSERT INTO orderdetail(order_code, inventory_id, order_header_id, item_id, order_quantity, unit_price, total_unit_price, unit_weight, status_id, created_date, modified_date, created_by, modified_by, ref_detail_id) VALUES (:order_code,  NULL, :order_header_id, :item_id, :order_quantity, :unit_price, :total_unit_price, :unit_weight, :status_id, :created_date, :modified_date, :created_by, :modified_by, :reference_id)");
+																			$stmt_createDetail->execute([
+																				":order_code"       => strtoupper($order['order_code']),
+																				":order_header_id"  => $orderheader['order_header_id'],
+																				":item_id"          => $checkItem['item_id'],
+																				":order_quantity"   => $value['quantity'],
+																				":unit_price"       => $value['unit_price'],
+																				":total_unit_price" => intval($value['quantity']*$value['unit_price']),
+																				":unit_weight"      => $value['item_weight'],
+																				":status_id"        => $orderheader['status_id'],
+																				":created_date"     => $orderheader['created_date'],
+																				":modified_date"    => $orderheader['modified_date'],
+																				":created_by"       => $orderheader['created_by'],
+																				":modified_by"      => $orderheader['modified_by'],
+																				":reference_id"     => $value['ref_detail_id']
+																			]);
+																			if($stmt_createDetail->rowCount() == 0)
+																			{
+																				$error .= "FAILED CREATE ORDER DETAIL FOR ITEM ID ".$value['item_id'].", ";
+																			}
+																		}
+																		else
+																		{
+																			$error .= "ITEM ".$value['item_id']." NOT FOUND IN ITEM MASTER, ";
+																		}
+																	}
+																}
+																else
+																{
+																	$error .= "CANNOT CREATE ORDER HEADER WITH INV CODE ".$order['order_code'].", ";
 																}
 															}
 															else
 															{
-																$error .= "CANNOT CREATE ORDER HEADER WITH INV CODE ".$order['order_code'].", ";
+																$error .= "ORDER ".$order['order_code']." ALREADY EXISTS, ";
+																$redis->set("orderheader:".$order['order_code'].":".$client['client_id'], date('Y-m-d H:i:s'), 'EX', 259200);
 															}
 														}
 														else
