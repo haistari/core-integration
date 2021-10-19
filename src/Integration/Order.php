@@ -409,7 +409,7 @@ class Order
 								$stmt_shopconfiguration = $this->db_slave->prepare("SELECT shop_configuration_id FROM shopconfiguration WHERE client_id = :client_id AND channel_id = :channel_id AND shop_name = :shop_name");
 								$stmt_shopconfiguration->execute([
 									":client_id"  => $client['client_id'],
-									":channel_id" => $channel_id['channel_id'],
+									":channel_id" => $channel_id,
 									":shop_name"  => $order['shop_name']
 								]);
 								$shopconfiguration = $stmt_shopconfiguration->fetch();
