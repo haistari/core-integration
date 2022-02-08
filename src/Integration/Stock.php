@@ -95,7 +95,7 @@ class Stock
                                                                 WHERE id.inventory_id = a.inventory_id 
                                                                 AND id.is_damaged = 0 
                                                                 AND id.exist_quantity > 0 
-                                                                AND gras.code <> 'GAREA009'
+                                                                AND gras.code NOT IN ('GAREA009', 'GAREA010') 
                                                                 AND id.item_information >= '".$expdt."') as exist_quantity,
                                                             (
                                                                 SELECT SUM(id.exist_quantity) 
@@ -104,7 +104,7 @@ class Stock
                                                                 JOIN gridarea gras ON gras.grid_area_id = grs.grid_area_id
                                                                 WHERE id.inventory_id = a.inventory_id 
                                                                 AND id.is_damaged = 1 
-                                                                AND gras.code <> 'GAREA009'
+                                                                AND gras.code NOT IN ('GAREA009', 'GAREA010')
                                                                 AND id.exist_quantity > 0) as damaged_quantity
                                                         FROM inventory a 
                                                         WHERE a.location_id = ? AND a.market_place_id = ? AND a.program_item_id = ?";
@@ -119,7 +119,7 @@ class Stock
                                                                 JOIN gridarea gras ON gras.grid_area_id = grs.grid_area_id
                                                                 WHERE id.inventory_id = a.inventory_id 
                                                                 AND id.is_damaged = 0 
-                                                                AND gras.code <> 'GAREA009'
+                                                                AND gras.code NOT IN ('GAREA009', 'GAREA010')
                                                                 AND id.exist_quantity > 0) as exist_quantity,
                                                             (
                                                                 SELECT SUM(exist_quantity) 
@@ -128,7 +128,7 @@ class Stock
                                                                 JOIN gridarea gras ON gras.grid_area_id = grs.grid_area_id
                                                                 WHERE inventory_id = a.inventory_id 
                                                                 AND is_damaged = 1 
-                                                                AND gras.code <> 'GAREA009'
+                                                                AND gras.code NOT IN ('GAREA009', 'GAREA010')
                                                                 AND exist_quantity > 0) as damaged_quantity
                                                         FROM inventory a 
                                                         WHERE a.location_id = ? AND a.market_place_id = ? AND a.program_item_id = ?";
@@ -189,16 +189,16 @@ class Stock
                                             {
                                                 $expdt = date('Y-m-d', strtotime('+'.$item['additional_expired'].' day', time()));
                                                 $sql_inventory = "SELECT 
-                                                    (SELECT SUM(inv.exist_quantity) FROM inventorydetail inv JOIN grid g ON inv.grid_id = g.grid_id JOIN gridarea ga ON g.grid_area_id = ga.grid_area_id WHERE inv.inventory_id = a.inventory_id AND inv.is_damaged = 0 AND inv.exist_quantity > 0 AND ga.code <> 'GAREA009' AND inv.item_information >= '".$expdt."') AS exist_quantity,
-                                                    (SELECT SUM(inv.exist_quantity) FROM inventorydetail inv JOIN grid g ON inv.grid_id = g.grid_id JOIN gridarea ga ON g.grid_area_id = ga.grid_area_id WHERE inv.inventory_id = a.inventory_id AND inv.is_damaged = 1 AND inv.exist_quantity > 0 AND ga.code <> 'GAREA009') AS damaged_quantity
+                                                    (SELECT SUM(inv.exist_quantity) FROM inventorydetail inv JOIN grid g ON inv.grid_id = g.grid_id JOIN gridarea ga ON g.grid_area_id = ga.grid_area_id WHERE inv.inventory_id = a.inventory_id AND inv.is_damaged = 0 AND inv.exist_quantity > 0 AND ga.code NOT IN ('GAREA009', 'GAREA010') AND inv.item_information >= '".$expdt."') AS exist_quantity,
+                                                    (SELECT SUM(inv.exist_quantity) FROM inventorydetail inv JOIN grid g ON inv.grid_id = g.grid_id JOIN gridarea ga ON g.grid_area_id = ga.grid_area_id WHERE inv.inventory_id = a.inventory_id AND inv.is_damaged = 1 AND inv.exist_quantity > 0 AND ga.code NOT IN ('GAREA009', 'GAREA010')) AS damaged_quantity
                                                 FROM inventory a
                                                 WHERE a.location_id = ? AND a.market_place_id = ? AND a.program_item_id = ?";
                                             }
                                             else
                                             {
                                                 $sql_inventory = "SELECT 
-                                                    (SELECT SUM(inv.exist_quantity) FROM inventorydetail inv JOIN grid g ON inv.grid_id = g.grid_id JOIN gridarea ga ON g.grid_area_id = ga.grid_area_id WHERE inv.inventory_id = a.inventory_id AND inv.is_damaged = 0 AND inv.exist_quantity > 0 AND ga.code <> 'GAREA009') AS exist_quantity,
-                                                    (SELECT SUM(inv.exist_quantity) FROM inventorydetail inv JOIN grid g ON inv.grid_id = g.grid_id JOIN gridarea ga ON g.grid_area_id = ga.grid_area_id WHERE inv.inventory_id = a.inventory_id AND inv.is_damaged = 1 AND inv.exist_quantity > 0 AND ga.code <> 'GAREA009') AS damaged_quantity
+                                                    (SELECT SUM(inv.exist_quantity) FROM inventorydetail inv JOIN grid g ON inv.grid_id = g.grid_id JOIN gridarea ga ON g.grid_area_id = ga.grid_area_id WHERE inv.inventory_id = a.inventory_id AND inv.is_damaged = 0 AND inv.exist_quantity > 0 AND ga.code NOT IN ('GAREA009', 'GAREA010')) AS exist_quantity,
+                                                    (SELECT SUM(inv.exist_quantity) FROM inventorydetail inv JOIN grid g ON inv.grid_id = g.grid_id JOIN gridarea ga ON g.grid_area_id = ga.grid_area_id WHERE inv.inventory_id = a.inventory_id AND inv.is_damaged = 1 AND inv.exist_quantity > 0 AND ga.code NOT IN ('GAREA009', 'GAREA010')) AS damaged_quantity
                                                 FROM inventory a 
                                                 WHERE a.location_id = ? AND a.market_place_id = ? AND a.program_item_id = ?";
                                             }
